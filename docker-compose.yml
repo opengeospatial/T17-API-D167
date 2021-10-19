@@ -1,0 +1,16 @@
+  image: ncareol/osm-tiles
+  volumes:
+    # keep postgresql database files on host in ./docker/osm:
+    - ./docker/osm/postgresql:/var/lib/postgresql
+    # keep OSM tiles on host in ./docker/osm:
+    - ./docker/osm/mod_tile:/var/lib/mod_tile
+    # mount OSM data file from host into Docker container
+    - ./spain-latest.osm.pbf:/tmp/spain-latest.osm.pbf
+  environment:
+    OSM_IMPORT_FILE: '/tmp/spain-latest.osm.pbf'
+    OSM_IMPORT_CACHE: '900'
+    OSM_MAX_ZOOM: '12'
+    OSM_RENDER_FORCE: 'false'
+  ports:
+    - '8000:80'
+  command: 'startweb'
