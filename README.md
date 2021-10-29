@@ -4,9 +4,9 @@ This repository provides scripts and documentation developed for D167 at OGC Tes
 
 They cover the following use cases:
 
+* Generate and deploy a tiles server (Docker and one-click service options)
 * Deploy PostGIS in the cloud (AWS, CloudSigma, CloudFerro)
 * Deploy AWS S3 GeoJSON objects
-* Generate and deploy a tiles server (Docker and one-click service options)
 
 Please note this repository is under development.
 
@@ -97,6 +97,71 @@ The user does not need to interact with the script. Everything happens in the ba
 The process is set to generate raster tiles on demand, but it should be possible to generate vector tiles with some changes.
 
 The last part of the process sets up a cache. Instead of using the method documented in OSM (using tilecache, that stores the generated tiles in the server and risks of consuming large space in the hd), we opted to use an Apache module that caches the generated tiles in the client's browser (by default tiles will be cached for 14 days).
+
+## PostGIS deployment in the cloud
+
+The script `deploy_datasets.sh` sets up the environment in an Ubuntu 20.04 server to be used as a PostGIS-based datasets storage server. It also downloads the latest version of OSM data for a specified country and stores it in the database.
+
+### Prerequisites
+
+1. An Ubuntu 20.04 server.
+1. Access to the Internet.
+1. The server should not have issues with broken packages. It is recommended to use a clean installation.
+1. PostgreSQL database should not be preinstalled.
+1. The script  must be executed with sudoer permissions or by the root user.
+
+### Script usage
+
+Once the environment meets the requirements, follow these steps to launch the script:
+
+1. Upload the script to the location where you want to execute it.
+
+2. Copy the script to folder `/usr/local/sbin/`.
+
+```
+sudo cp -v deploy_datasets.sh /usr/local/sbin/
+```
+
+**NOTE:** It can be copied to a different directory, as long as it is included in variable `PATH`.
+
+3. Set permissions for execution.
+
+```
+sudo chmod 0750 /usr/local/sbin/deploy_datasets.sh
+```
+
+4. Modify the global variables in the script, with are located at the beginning of the file. For security reasons, it is recommended to review and update the following variables in every new deployment:
+
+    * USERNAME
+    * DB_NAME
+    * DBA_NAME
+
+You can also select a different region and country by changing these variables:
+
+    * ZONEPBF
+    * COUNTRYPBF
+
+You can find all available countries and their correct spelling to properly set up the value of variable COUNTRYPBF in [https://download.geofabrik.de](eofabrik site). For example, for Spain the corresponding file is https://download.geofabrik.de/europe/spain-latest.osm.pbf, thus the correct value in COUNTRYPBF should be `spain`.
+
+5. Proceed to execute the script.
+
+```
+sudo deploy_datasets.sh
+```
+
+**NOTE:** If you want to execute it in debug mode, launch the script in the following manner:
+
+```
+sudo bash -x /usr/local/sbin/deploy_datasets.sh
+```
+
+## Troubleshooting
+
+In case of issues during the script's execution, you need to review which functions have been executed and comment them. This way you will avoid new issues by re-executing the same code again. Then, try executing the script in debug mode to identify the problem.
+
+```
+sudo bash -x /usr/local/sbin/deploy_datasets.sh
+```
 
 ## GeoJSON objects deployment in AWS S3 
 
