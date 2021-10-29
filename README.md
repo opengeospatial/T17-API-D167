@@ -97,3 +97,109 @@ The user does not need to interact with the script. Everything happens in the ba
 The process is set to generate raster tiles on demand, but it should be possible to generate vector tiles with some changes.
 
 The last part of the process sets up a cache. Instead of using the method documented in OSM (using tilecache, that stores the generated tiles in the server and risks of consuming large space in the hd), we opted to use an Apache module that caches the generated tiles in the client's browser (by default tiles will be cached for 14 days).
+
+## GeoJSON objects deployment in AWS S3 
+
+Deploying GeoJSON objects in AWS is not a particularly complex task, although it requires familiarity with some tools and commands. For this deliverable, Skymantics has worked with a scenario that a series of features stored in a PostgreSQL/PostGIS database need to be exported to GeoJSON and published in an AWS S3 bucket. All the main steps in this process have been coded in a shell script that makes a request from a specific table, stores the results in independent files and uploads them to an AWS S3 bucket.
+
+The script has functions to review that the environment meets the requirements, to obtain the data from an SQL query and upload them to an AWS S3 bucket, and to add new features as a new dataset.
+
+### Prerequisites
+
+1. The script needs to be executed in a EC2 AWS instance, set up to store datasets.
+1. The instance needs to have an associated role, in order to avoid authentication, increasing thus the security.
+1. The AWS S3 bucket needs permissions to upload objects and modify an object's ACLs (in order to make the object public).
+1. The instance needs access to the Internet.
+1. Packages `jq` y `awscli` must be installed.
+
+### Limitations
+
+This script is configured to use the following buckets:
+
+* ogc-points
+* ogc-polygons
+
+Each bucket is generated from a dataset stored in a database, points or polygons respectively. You can modify it to adapt to your particular case.
+
+Existing JSON files in AWS S3 will not be deleted.
+
+### Script usage
+
+Once the environment meets the requirements, follow these steps to launch the script:
+
+1. Upload the script to the location where you want to execute it.
+
+2. Copy the script to folder `/usr/local/sbin/`.
+
+```
+sudo cp -v deploy_s3_datasets.sh /usr/local/sbin/
+```
+
+**NOTE:** It can be copied to a different directory, as long as it is included in variable `PATH`.
+
+3. Set permissions for execution.
+
+```
+sudo chmod 0750 /usr/local/sbin/deploy_s3_datasets.sh
+```
+
+4. Modify the global variables in the script, with are located at the beginning of the file. The most important variables are:
+
+    | Variable           | Description                                                                    |
+    |--------------------|--------------------------------------------------------------------------------|
+    | DB_NAME            | Name of the database withh the datasets to extract                             |
+    | JSON_DIR           | Directory to save the JSON output files                                        |
+    | POINT_JSON_FILE    | JSON file with the content of the `point` dataset query                        |
+    | POLYGON_JSON_FILE  | JSON file with the content of the `polygons` dataset query                     |
+
+**NOTE:** All files in the directory defined in variable `JSON_DIR` will be deleted.
+
+5. Proceed to execute the script, passing the dataset we are interested in as argument (examples for dataset point and dataset polygons respectively). This command will extract the data from the database, package it as GeoJSON and upload it to AWS S3 in one go:
+
+```
+sudo deploy_s3_datasets.sh point
+```
+
+or
+
+```
+sudo deploy_s3_datasets.sh polygons
+```
+
+**NOTE:** If you want to execute it in debug mode, launch the script in the following manner:
+
+```
+sudo bash -x /usr/local/sbin/deploy_s3_datasets.sh point
+```
+
+or
+
+```
+sudo bash -x /usr/local/sbin/deploy_s3_datasets.sh polygons
+```
+
+6. Check that the files are properly uplodaded. You have two different options for that:
+
+a) From AWS console (first access S3 service and then the bucket).
+b) Using the AWS S3 bucket's URL, for example:
+
+* List the objects in the bucket: https://ogc-points.s3.us-east-2.amazonaws.com/ or https://ogc-polygons.s3.us-east-2.amazonaws.com/
+* One specific object in the bucket: https://ogc-points.s3.us-east-2.amazonaws.com/101144261.json o https://ogc-polygons.s3.us-east-2.amazonaws.com/548865641.json
+
+### Troubleshooting
+
+In case of issues during the script's execution, you need to identify which function is failing, as it could be a problem with the connection to the PostgreSQL database, the JSON parsing (`get_planet_osm_` functions) or an access problem to the AWS S3 bucket (`upload_json` function).
+
+If the later, check whether the user can query the AWS S3 bucket, for example:
+
+```
+aws s3 ls ogc-points
+```
+
+or
+
+```
+aws s3 ls ogc-polygons
+```
+
+If after executing that command there is an issue whatsoever, then you need to contact the system administrator responsible for AWS S3 and provide all the information on the issue, such as the error message that is prompted after the previous command or the log of the script execution in debug mode.
