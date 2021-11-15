@@ -7,8 +7,7 @@ They cover the following use cases:
 * Generate and deploy a tiles server (Docker and one-click service options)
 * Deploy PostGIS in the cloud (AWS, CloudSigma, CloudFerro)
 * Deploy AWS S3 GeoJSON objects
-
-Please note this repository is under development.
+* Apply the concept of tiling to NetCDF files
 
 ## Tiles generation and tiles server
 
@@ -100,7 +99,7 @@ The last part of the process sets up a cache. Instead of using the method docume
 
 ## PostGIS deployment in the cloud
 
-The script `deploy_datasets.sh` sets up the environment in an Ubuntu 20.04 server to be used as a PostGIS-based datasets storage server. It also downloads the latest version of OSM data for a specified country and stores it in the database.
+The script `deploy_datasets.sh` sets up the environment in an Ubuntu 20.04 server to be used as a PostGIS-based datasets storage server. It also downloads the latest version of OSM data for a specified country and stores it in the database. This script has been successfully used in different cloud environments, such as AWS, CloudFerro and CloudSigma. It can also be adapted to run locally.
 
 ### Prerequisites
 
@@ -268,3 +267,15 @@ aws s3 ls ogc-polygons
 ```
 
 If after executing that command there is an issue whatsoever, then you need to contact the system administrator responsible for AWS S3 and provide all the information on the issue, such as the error message that is prompted after the previous command or the log of the script execution in debug mode.
+
+## NetCDF tiling
+
+NetCDF files are often large and require important resources and bandwidth to manipulate. In order to facilitate their manipulation, the `netcdf_tiling.py` script is used to test the application of the tiling concept to a NetCDF file. It consists on generating several NetCDF files from an original one, with the data for a "tile" geographical area. The number of tiles generated depend on the zoom level:
+
+ * Level 0: one file
+ * Level 1: four files
+ * level 2: sixteen files
+
+ and so on
+
+This code is for demonstration purposes and it uses the sample file air.sig995.2012.nc available at https://psl.noaa.gov/repository/entry/show?entryid=972f08b9-e4b1-4edf-94e8-5ad7c4d8b33d
